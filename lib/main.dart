@@ -1,13 +1,18 @@
+import 'dart:async'; //TAREFAS ASSINCRONAS
+import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:percent_indicator/percent_indicator.dart';
+import 'package:percent_indicator/percent_indicator.dart'; //INDICADOR DE PERCENTUAL
+import 'package:http/http.dart' as http; //BIBLIOTECA PARA REQUISIÇÕES NA API
+import 'dart:core'; //SUBSTRING
 
-void main() {
+void main() async {
+  //List<filmModel> list = await buscarFilmes('now_playing');
   runApp(const MyApp());
 }
 
 //CLASSE PRINCIPAL - MYAPP
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+    const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -20,20 +25,20 @@ class MyApp extends StatelessWidget {
           body: SingleChildScrollView(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children:  [
+                children:   [
                   const Padding(padding: EdgeInsets.all(8),
                       child: Text("Os Mais Populares", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold))
                   ),
                   SizedBox(
                     height: 420,
-                    child: listaFilmes(filmPopulares()),
+                    child: listaFilmes('now_playing'),
                   ),
                   const Padding(padding: EdgeInsets.all(8),
-                      child: Text("Grátis para Assistir", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold))
+                      child: Text("Nos Cinemas", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold))
                   ),
                   SizedBox(
                     height: 400,
-                    child: listaFilmes(filmGratisAssistir()),
+                   child: listaFilmes('popular'),
                   )
                 ],
               )
@@ -46,80 +51,230 @@ class MyApp extends StatelessWidget {
 //CLASSE PARA LISTAR OS FILMES - LAYOUT UNICO - REAPROVEITADO
 class listaFilmes extends StatelessWidget {
 
+  String textEndpoint;
   //RECEBE NO CONSTRUTOR A LISTA DE FILMES PARA EXIBIR AO USUARIO
-  List<filmModel> _films = [];
-  listaFilmes(this._films, {Key? key}) : super(key: key);
+  listaFilmes(this.textEndpoint, {Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
 
-    return Container(
-            margin: const EdgeInsets.all(8),
-            child: ListView.builder(
-                itemCount: _films.length,
-                scrollDirection: Axis.horizontal,
-                itemBuilder: (BuildContext context, int index) {
-                  return Column(
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none, //PROPRIEDADE PARA VAZER DO LAYOUT
-                        children: <Widget>[
-                          Container(
-                            margin: const EdgeInsets.only(top: 5, left: 8, right: 8, bottom: 25),
-                            width: 150.0,
-                            height: 250,
-                            decoration: BoxDecoration(
-                                image: DecorationImage(
-                                    fit: BoxFit.fill,
-                                    image: NetworkImage(_films[index].urlImagem)),
-                                borderRadius: const BorderRadius.all(Radius.circular(10.0))
-                            ), //color: Colors.amber[colorCodes[index]],
+    return FutureBuilder(
+        future: buscarFilmes(textEndpoint),
+        builder:(context, AsyncSnapshot _films) {
+          //VALIDA SE OS VALORES DA API CHEGARAM, SE NÃO - APARECE O CARREGAMENTO
+          if (!_films.hasData) {
+            return const Center(child: CircularProgressIndicator(
+              strokeWidth: 5,
+              backgroundColor: Colors.grey,
+            ));
+          } else {
+            return Container(
+                margin: const EdgeInsets.all(8),
+                child: ListView.builder(
+                    itemCount: _films.data.length,
+                    scrollDirection: Axis.horizontal,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Column(
+                        children: [
+                          Stack(
+                            clipBehavior: Clip.none, //PROPRIEDADE PARA VAZER DO LAYOUT
+                            children: <Widget>[
+                              Container(
+                                margin: const EdgeInsets.only(top: 5, left: 8, right: 8, bottom: 25),
+                                width: 150.0,
+                                height: 250,
+                                decoration: BoxDecoration(
+                                    image: DecorationImage(
+                                        fit: BoxFit.fill,
+                                        image: NetworkImage('https://image.tmdb.org/t/p/original' + _films.data[index].urlImagem)),
+                                    borderRadius: const BorderRadius.all(Radius.circular(10.0))
+                                ), //color: Colors.amber[colorCodes[index]],
+                              ),
+                              //ADICIONAR A IMAGEM 3 PONTINHOS
+                              Positioned(
+                                top: 2,
+                                right: 5,
+                                child: IconButton(
+                                  icon: const Icon(Icons.youtube_searched_for_sharp),
+                                  color: Colors.deepOrangeAccent,
+                                  iconSize: 30,
+                                  onPressed: () {
+                                    showDialog<void>(
+                                      context: context,
+                                      barrierDismissible: false, // user must tap button!
+                                      builder: (BuildContext context) {
+                                        return AlertDialog(
+                                          title: Text(_films.data[index].nome.toString()),
+                                          content: SingleChildScrollView(
+                                            child: ListBody(
+                                              children: <Widget>[
+                                                Text(_films.data[index].overview),
+                                                Text('\nLançamento: ' + _formatData(_films.data[index].lancamento)),
+                                              ],
+                                            ),
+                                          ),
+                                          actions: <Widget>[
+                                            TextButton(
+                                              child: const Text('OK'),
+                                              onPressed: () {
+                                                Navigator.of(context).pop();
+                                              },
+                                            ),
+                                          ],
+                                        );
+                                      },
+                                    );
+                                  },
+                                )
+                              ),
+                            //NOTA DO FILME
+                              Positioned(
+                                  bottom: 2,
+                                  left: 20,
+                                  child: Container (
+                                      padding: const EdgeInsets.all(3),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.black87,
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: CircularPercentIndicator(
+                                        radius: 40,
+                                        lineWidth: 3.0,
+                                        animationDuration: 200,
+                                        backgroundColor: Colors.black45,
+                                        percent: _films.data[index].nota / 100,
+                                        //progressColor: Theme.of(context).accentColor,
+                                        progressColor: _progressColorRange(_films.data[index].nota * 10),
+                                        circularStrokeCap: CircularStrokeCap.round,
+                                        animation: true,
+                                        center: Text(_films.data[index].nota.toInt().toString() + "%", style: const TextStyle(fontSize: 14.0, fontFamily: 'Comic Sans MS', fontWeight: FontWeight.bold, color: Colors.white),),
+                                      )
+                                  )
+                              ),
+                            ],
                           ),
-                          //ADICIONAR A IMAGEM 3 PONTINHOS
-                          Positioned(
-                           bottom: 2,
-                           left: 20,
-                           child: Container (
-                             padding: const EdgeInsets.all(3),
-                             decoration: const BoxDecoration(
-                               color: Colors.black87,
-                               shape: BoxShape.circle,
-                             ),
-                             child: CircularPercentIndicator(
-                               radius: 40,
-                               lineWidth: 3.0,
-                               animationDuration: 200,
-                               backgroundColor: Colors.black45,
-                               percent: _films[index].nota / 100,
-                               //progressColor: Theme.of(context).accentColor,
-                               progressColor: _progressColorRange(_films[index].nota),
-                               circularStrokeCap: CircularStrokeCap.round,
-                               animation: true,
-                               center: Text(_films[index].nota.toString() + "%", style: const TextStyle(fontSize: 14.0, fontFamily: 'Comic Sans MS', fontWeight: FontWeight.bold, color: Colors.white),),
-                             )
-                         )
-                         ),
+                          Container(
+                            margin: const EdgeInsets.only(top: 10),
+                            width: 150.0,
+                            child: Text(_films.data[index].nome, style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),softWrap: true,),
+                          ),
+                          SizedBox(
+                            width: 150.0,
+                            child: Text(_formatData(_films.data[index].lancamento), style: const TextStyle(fontSize: 16.0, color: Color.fromRGBO(0, 0, 0, 100) )),
+                          ),
                         ],
-                      ),
-                      Container(
-                        margin: const EdgeInsets.only(top: 10),
-                        width: 150.0,
-                        child: Text(_films[index].nome, style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold),softWrap: true,),
-                      ),
-                      SizedBox(
-                        width: 150.0,
-                        child: Text(_films[index].lancamento, style: const TextStyle(fontSize: 16.0, color: Color.fromRGBO(0, 0, 0, 100) )),
-                      ),
-                    ],
-                  );
-                }
-            )
-        );
+                      );
+                    }
+                )
+            );
+          }
+        }
+          );
+  }
+}
+
+//TODA CLASSE ASYNCRONA SERÁ UM RETORNO FUTURO
+Future<List<filmModel>> buscarFilmes(String text) async{
+
+  //CRIO O MAPA PARA ENVIAR COMO PARAMETRO NO POST
+   Map<String, String> queryParameters =  {
+     'api_key': '1019e8ecf4e06f155e24735b9f35f3ab',
+     'language': 'pt-BR',
+     'page': '2'
+   };
+
+   //CRIO A URL DO SERVIDOR E PASSO O MAP COMO PARAMETRO
+   var url = Uri.parse('https://api.themoviedb.org/3/movie/' + text).replace(queryParameters: queryParameters);
+   //FAÇO O POST E COLETO O RETORNO
+   var response = await http.get(url);
+
+   //VALIDO SE A RESPOSTA DO SERVIDOR RETORNOU COM SUCESSO: CODE 200
+   if(response.statusCode == 200){
+     //DECODIFICO O JSON RETORNADO PELA API
+     final json = jsonDecode(response.body);
+     //COLOCO EM UMA LISTA O OBJETO "RESULTS" DO SERVIDOR
+     final lista = json['results'];
+
+     //CRIO UM OBJETO O NOSSO MODELO DE FILME
+     List<filmModel> filmList = [];
+
+     //CRIO O FOR EACH PARA ADICIONARMOS CADA ITEM DA LISTA EM UM OBJETO
+     lista.forEach((linha) async {
+       var film = filmModel();
+       film.id = int.parse(linha['id'].toString());
+       film.nome = linha['title'];
+       film.urlImagem = linha['poster_path'];
+       film.nota = double.parse(linha['vote_average'].toString());
+       film.overview = linha['overview'];
+       film.nota = film.nota * 10;
+       film.lancamento = linha['release_date'];
+
+       //AO CRIAR UM OBJETO FILME MODEL, ADICIONO ELE NA LISTA;
+       filmList.add(film);
+     });
+
+     //RETORNO A LISTA PARA SER UTILIZADA NO FRONT
+     return filmList;
+
+   } else { //CASO DE ERRO AO BUSCAR OS DADOS NO SERVIDOR - RETORNO UMA EXCEPTION
+     throw Exception('Falha ao consultar API');
+   }
+ }
+
+//CLASSE MODELO DE FILMES
+class filmModel {
+
+   late String _nome;
+   late String _lancamento;
+   late String _urlImagem;
+   late double _nota;
+   late int _id;
+   late String _overview;
+
+   @override
+  String toString() {
+    return 'filmModel{_nome: $_nome, _lancamento: $_lancamento, _urlImagem: $_urlImagem, _nota: $_nota, _id: $_id, _overview: $_overview}';
+  }
+
+   String get overview => _overview;
+
+  set overview(String value) {
+    _overview = value;
+  }
+
+  String get nome => _nome;
+
+  set nome(String value) {
+    _nome = value;
+  }
+
+   String get lancamento => _lancamento;
+
+  set lancamento(String value) {
+    _lancamento = value;
+  }
+
+   String get urlImagem => _urlImagem;
+
+  set urlImagem(String value) {
+    _urlImagem = value;
+  }
+
+   double get nota => _nota;
+
+  set nota(double value) {
+    _nota = value;
+  }
+
+   int get id => _id;
+
+  set id(int value) {
+    _id = value;
   }
 }
 
 //RETORNA A COR DA BARRA DE ACORDO COM A NOTA
-_progressColorRange(int nota){
+_progressColorRange(double nota){
   if(nota <= 30){
     return Colors.redAccent;
   } else if (nota < 70 && nota > 30){
@@ -129,115 +284,50 @@ _progressColorRange(int nota){
   }
 }
 
-//DEFINIREMOS OS FILMES POPULARES
- filmPopulares(){
-   List<filmModel> _films = [];
+//METODO PARA FORMATAR A DATA DOS FILMES
+String _formatData(text){
 
-   //CRIAMOS A LISTA DE FILMES
-   filmModel filme1 = filmModel();
-   filme1.nome = "Invencível";
-   filme1.lancamento = "26 de mar de 2021";
-   filme1.urlImagem = "https://www.themoviedb.org/t/p/w600_and_h900_bestv2/hXWGbKLfARbfFyMCQ90AQRGjEGo.jpg";
-   filme1.nota = 89;
+  String ano = text.toString().substring(0, 4);
+  String dia = text.toString().substring(text.toString().length -2, text.toString().length);
+  String mes = text.toString().substring(5, 7);
 
-   filmModel filme2 = filmModel();
-   filme2.nome = "Ponto Vermelho";
-   filme2.lancamento = "11 de fev de 2021";
-   filme2.urlImagem = "https://superfilmesonline.pro/wp-content/uploads/2021/03/Ponto-Vermelho.jpg";
-   filme2.nota = 59;
-
-   filmModel filme3 = filmModel();
-   filme3.nome = "Aves de Rapina: Arlequina e Sua Emancipação Fantabulosa";
-   filme3.lancamento = "05 de fev de 2020";
-   filme3.urlImagem = "https://www.claquete.com/fotos/filmes/poster/12684_medio.jpg";
-   filme3.nota = 71;
-
-   filmModel filme4 = filmModel();
-   filme4.nome = "Velozes e Furiosos 9";
-   filme4.lancamento = "24 de jun de 2021";
-   filme4.urlImagem = "https://br.web.img3.acsta.net/pictures/21/04/14/19/06/3385237.jpg";
-   filme4.nota = 87;
-
-   _films.add(filme1);
-   _films.add(filme2);
-   _films.add(filme3);
-   _films.add(filme4);
-
-   return _films;
-}
-
-//DEFINIREMOS OS FILMES GRATIS PARA ASSISTIR
-filmGratisAssistir(){
-  List<filmModel> _films = [];
-
-  //CRIAMOS A LISTA DE FILMES
-  filmModel filme1 = filmModel();
-  filme1.nome = "Rota de Fuga 3: O Resgate";
-  filme1.lancamento = "20 de jun de 2019";
-  filme1.urlImagem = "https://media.fstatic.com/wv5kOZw_VRgBDWuRKDhh2BE0rQY=/290x478/smart/media/movies/covers/2019/08/Ai1SOVuB.jpg";
-  filme1.nota = 52;
-
-  filmModel filme2 = filmModel();
-  filme2.nome = "O Reino Proibido";
-  filme2.lancamento = "18 de abr de 2008";
-  filme2.urlImagem = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTBZnLJC0iZLm9lZqH5055Oq4GP5Ryd0288TTh4ez0Rw7EQbpVmYB6LXyCaAmPiFqlY0F4&usqp=CAU";
-  filme2.nota = 65;
-
-  filmModel filme3 = filmModel();
-  filme3.nome = "Autodestruição";
-  filme3.lancamento = "01 de jun de 2017";
-  filme3.urlImagem = "https://www.vejapop.com/img/uploads/500x750/movies/2/230/poster-230.jpg";
-  filme3.nota = 47;
-
-  filmModel filme4 = filmModel();
-  filme4.nome = "Turks in Space (Dünyayı Kurtaran Adam'ın Oğlu)";
-  filme4.lancamento = "14 de dez de 2006";
-  filme4.urlImagem = "https://upload.wikimedia.org/wikipedia/en/thumb/0/07/Turks_in_Space.jpg/220px-Turks_in_Space.jpg";
-  filme4.nota = 30;
-
-  _films.add(filme1);
-  _films.add(filme2);
-  _films.add(filme3);
-  _films.add(filme4);
-
-  return _films;
-}
-
-//CLASSE MODELO DE FILMES
-class filmModel {
-
-  late String _nome;
-  late String _lancamento;
-  late String _urlImagem;
-  late int _nota;
-
-
-  @override
-  String toString() {
-    return 'filmModel{_nome: $_nome, _lancamento: $_lancamento, _urlImagem: $_urlImagem, _nota: $_nota}';
+  switch(mes) {
+    case '01':
+      mes = "jan";
+      break;
+    case '02':
+      mes = "fev";
+      break;
+    case '03':
+      mes = "mar";
+      break;
+    case '04':
+      mes = "abr";
+      break;
+    case '05':
+      mes = "mai";
+      break;
+    case '06':
+      mes = "jun";
+      break;
+    case '07':
+      mes = "jul";
+      break;
+    case '08':
+      mes = "ago";
+      break;
+    case '09':
+      mes = "set";
+      break;
+    case '10':
+      mes = "out";
+      break;
+    case '11':
+      mes = "nov";
+      break;
+    case '12':
+      mes = "dez";
+      break;
   }
-
-  String get nome => _nome;
-
-  set nome(String value) {
-    _nome = value;
-  }
-
-  String get lancamento => _lancamento;
-
-  set lancamento(String value) {
-    _lancamento = value;
-  }
-
-  String get urlImagem => _urlImagem;
-
-  set urlImagem(String value) {
-    _urlImagem = value;
-  }
-
-  int get nota => _nota;
-
-  set nota(int value) {
-    _nota = value;
-  }
+  return dia + ' de ' + mes + ' de ' + ano;
 }
