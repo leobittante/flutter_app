@@ -17,6 +17,15 @@ class _listaFilmes extends State<listaFilmes> {
   @override
   Widget build(BuildContext context) {
 
+    ScrollController _scrollController = ScrollController();
+
+    _scrollController.addListener(() {
+      //VALIDA SE CHEGOU AO FINAL DA LISTA
+      if(_scrollController.position.pixels == _scrollController.position.maxScrollExtent){
+        FilmSearchCubit(widget.textEndpoint);
+      }
+    });
+
     return BlocProvider<FilmSearchCubit>(
         create: (context) => FilmSearchCubit(widget.textEndpoint),
         child: Container(
@@ -32,7 +41,8 @@ class _listaFilmes extends State<listaFilmes> {
                 //RETORNA NOSSA LISTA DE FLMES PARA USARMOS NA LIST VIEW
                 final movies = state.movies;
                 return ListView.builder(
-                    itemCount: movies.length,
+                    controller: _scrollController,
+                    itemCount: 35,
                     scrollDirection: Axis.horizontal,
                     itemBuilder: (BuildContext context, int index) {
                       return Column(
