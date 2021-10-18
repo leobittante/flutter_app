@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
                         child: Text("Nos Cinemas", style: TextStyle(fontSize: 20.0, fontWeight: FontWeight.bold))
                     ),
                     SizedBox(
-                      height: 400,
+                      height: 450,
                       child: listaFilmes('popular'),
                     )
                   ],

@@ -22,7 +22,8 @@ class _listaFilmes extends State<listaFilmes> {
     _scrollController.addListener(() {
       //VALIDA SE CHEGOU AO FINAL DA LISTA
       if(_scrollController.position.pixels == _scrollController.position.maxScrollExtent){
-        FilmSearchCubit(widget.textEndpoint);
+        print('Final da Lista');
+        //FilmSearchCubit(widget.textEndpoint);
       }
     });
 
@@ -42,7 +43,7 @@ class _listaFilmes extends State<listaFilmes> {
                 final movies = state.movies;
                 return ListView.builder(
                     controller: _scrollController,
-                    itemCount: 35,
+                    itemCount: state.movies.length,
                     scrollDirection: Axis.horizontal,
                     itemBuilder: (BuildContext context, int index) {
                       return Column(
