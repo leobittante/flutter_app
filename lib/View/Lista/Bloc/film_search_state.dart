@@ -11,7 +11,7 @@ class FilmSearchInitial extends FilmSearchState {}
 //ESTADO COMPLETO
 class FilmSearchLoaded extends FilmSearchState {
 
-  final List<FilmModel> movies;
+  final List movies;
   FilmSearchLoaded(this.movies);
 
   Future<List<Object>> get props async => [movies];
