@@ -4,7 +4,9 @@ import 'package:list_movie/Model/film_model.dart';
 class SearchFilmRepository {
 
   //FAZ A BUSCA NO SERVIDOR
-  Future<List> searchRepository(String textEndpoint) async {
+  Future<List> fetchFilms(String textEndpoint) async {
+
+    Dio dio = Dio();
 
     //CRIO O MAPA PARA ENVIAR COMO PARAMETRO NO POST
     Map<String, String> queryParameters =  {
@@ -12,8 +14,6 @@ class SearchFilmRepository {
       'language': 'pt-BR',
       'page': '1'
     };
-
-    Dio dio = Dio();
 
     Response response = await dio.get(
         'https://api.themoviedb.org/3/movie/' + textEndpoint,

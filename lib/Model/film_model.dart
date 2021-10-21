@@ -11,7 +11,7 @@ class FilmModel {
   String releaseDate;
   String title;
   bool video;
-  num voteAverage;
+  double voteAverage;
   int voteCount;
 
   @override

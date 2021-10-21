@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:list_movie/Bloc/film_search_cubit.dart';
 import 'dart:core'; //SUBSTRING
-import 'Lista/Bloc/film_search_cubit.dart';
 import 'Lista/lista_filmes.dart';
 
 //CLASSE PRINCIPAL - MYAPP

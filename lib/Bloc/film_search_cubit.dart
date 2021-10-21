@@ -1,11 +1,13 @@
 import 'package:bloc/bloc.dart';
-import 'package:list_movie/View/Lista/Repository/search_film_repository.dart';
+import 'package:list_movie/Repositories/search_film_repository.dart';
 import 'package:meta/meta.dart';
 
 part 'film_search_state.dart';
 
 class FilmSearchCubit extends Cubit<FilmSearchState> {
   List<String> textEndpoint;
+  final searchFilmRepository = SearchFilmRepository();
+
   FilmSearchCubit(this.textEndpoint) : super(FilmSearchInitial()){
     _buscarFilmes(textEndpoint);
   }
@@ -13,11 +15,11 @@ class FilmSearchCubit extends Cubit<FilmSearchState> {
   //TODA CLASSE ASYNCRONA SERÁ UM RETORNO FUTURO
   _buscarFilmes(List<String> textEndpoint) async{
     try {
+      //CRIO UMA LISTA PARA RECEBER AS LISTAS DE FILMES
       List objFilms = [];
-      SearchFilmRepository searchFilmRepository = SearchFilmRepository();
 
       for(int i = 0; i < textEndpoint.length; i++){
-        final listFilms = await searchFilmRepository.searchRepository(textEndpoint[i]);
+        final listFilms = await searchFilmRepository.fetchFilms(textEndpoint[i]);
         if(searchFilmRepository.validationList(listFilms)){
           objFilms.add(listFilms);
         }
