@@ -38,6 +38,9 @@ dependencies:
   dio: ^4.0.0
   bloc: ^7.0.0
   flutter_bloc: ^7.0.0
+  dartz: ^0.10.0
+  shimmer: ^2.0.0
+  get_it: ^7.2.0
 
 dev_dependencies:
   flutter_test:
