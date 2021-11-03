@@ -13,7 +13,6 @@ class FilmSearchCommonCubit extends Cubit<FilmSearchCommonState> {
   }
   _searchCommon(int page) async{
     try {
-      //RETORNAMOS AS LISTAS DE FILMES PARA E ADICIONAMOS NA LISTA DE RESULTADOS
       final listFilmCommon = await getFilmCommonUseCase(Params(page: page));
       listFilmCommon.fold(
               (searchFailure) => emit(FilmSearchError()),

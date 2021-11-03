@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:list_movie/features/films/data/datasources/film_search_datasource.dart';
-import 'package:list_movie/features/films/data/repositories/film_search_repository_impl.dart';
-import 'package:list_movie/features/films/domain/usecases/get_film_common.dart';
-import 'package:list_movie/features/films/domain/usecases/get_film_now_playing.dart';
 import 'package:list_movie/features/films/presentation/bloc/get_film_common/film_search_common_cubit.dart';
 import 'package:list_movie/features/films/presentation/bloc/get_film_nowplaying/film_search_nowplaying_cubit.dart';
 import 'package:list_movie/features/films/presentation/widgets/films_bloc/list_films_get_common_bloc.dart';
 import 'package:list_movie/features/films/presentation/widgets/films_bloc/list_films_get_nowplaying_bloc.dart';
-import 'dart:core'; //SUBSTRING
+import 'dart:core';
+
+import 'package:list_movie/injection_locator.dart'; //SUBSTRING
 
 //CLASSE PRINCIPAL - MYAPP
 class MyApp extends StatelessWidget {
@@ -31,10 +29,10 @@ class MyApp extends StatelessWidget {
           body: MultiBlocProvider(
                   providers: [
                     BlocProvider<FilmSearchNowPlayingCubit>(
-                      create: (context) => FilmSearchNowPlayingCubit(GetFilmNowPlayingUseCase(FilmSearchRepositoryImpl(FilmSearchDataSourceImpl())))
+                      create: (context) => sl.get<FilmSearchNowPlayingCubit>()
                     ),
                     BlocProvider<FilmSearchCommonCubit>(
-                        create: (context) => FilmSearchCommonCubit(GetFilmCommonUseCase(FilmSearchRepositoryImpl(FilmSearchDataSourceImpl())))
+                        create: (context) => sl.get<FilmSearchCommonCubit>()
                     )
                   ],
               child:  SingleChildScrollView(

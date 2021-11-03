@@ -20,9 +20,7 @@ class ListFilmsGetNowPlayingBloc extends StatelessWidget {
               if (state is FilmSearchInitial) {
                 return const HomeShimmer();
               } //SE CARREGOU COMPLETAMENTE LISTA OS FILMES
-
               else if (state is FilmSearchLoaded) {
-                //RETORNA NOSSA LISTA DE FLMES PARA USARMOS NA LIST VIEW
                 final responseFilmEntity = state.responseFilmEntity;
                 return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

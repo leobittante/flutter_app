@@ -13,7 +13,6 @@ class FilmSearchNowPlayingCubit extends Cubit<FilmSearchNowPlayingState> {
   }
   _searchNowPlaying(int page) async{
     try {
-      //RETORNAMOS AS LISTAS DE FILMES PARA E ADICIONAMOS NA LISTA DE RESULTADOS
       final listFilmNowPlaying = await getFilmNowPlayingUseCase(Params(page: page));
       listFilmNowPlaying.fold(
               (searchFailure) => emit(FilmSearchError()),
